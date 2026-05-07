@@ -1,53 +1,171 @@
-import React from 'react';
-import { Bell, Info, AlertTriangle, CheckCircle2, ChevronRight, Clock, ShieldAlert } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { Bell, Info, AlertTriangle, CheckCircle2, ChevronRight, Clock, ShieldAlert, Plus, X, Send } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function NewsFeed() {
+  const { role, user } = useAuth();
   const { requestPermission, permission, notify } = useNotifications();
-  
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [news, setNews] = useState(() => {
+    const saved = localStorage.getItem('ktm_news');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 1,
+        title: 'Aviso: Mantenimiento de Servidores',
+        content: 'El domingo 28 de Marzo realizaremos mejoras en el sistema de rastreo. El servicio podría verse interrumpido de 02:00 a 04:00 AM.',
+        type: 'info' as const,
+        date: 'Hoy, 10:45 AM',
+        author: 'Soporte IT'
+      },
+      {
+        id: 2,
+        title: '¡Nueva Zona de Cobertura!',
+        content: 'Hemos expandido nuestras operaciones al sector de Cumbayá y Tumbaco. Ya puedes registrar pedidos para estas zonas con entregas el mismo día.',
+        type: 'success' as const,
+        date: 'Ayer, 08:30 PM',
+        author: 'Operaciones'
+      },
+      {
+        id: 3,
+        title: 'Retrasos por Condiciones Climáticas',
+        content: 'Debido a las fuertes lluvias en la zona sur, las entregas podrían presentar retrasos de 30-45 minutos. Agradecemos su comprensión.',
+        type: 'warning' as const,
+        date: 'Ayer, 02:20 PM',
+        author: 'Logística'
+      }
+    ];
+  });
+
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    type: 'info' as 'info' | 'warning' | 'success'
+  });
+
+  useEffect(() => {
+    localStorage.setItem('ktm_news', JSON.stringify(news));
+
+    const syncWithSheets = async () => {
+      try {
+        await fetch('/api/sync/news', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(news)
+        });
+      } catch (err) {
+        console.error('Failed to sync news with sheets:', err);
+      }
+    };
+    
+    const timeoutId = setTimeout(syncWithSheets, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [news]);
+
+  const handleAddNews = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newItem = {
+      id: Date.now(),
+      title: formData.title,
+      content: formData.content,
+      type: formData.type,
+      date: 'Reciente',
+      author: user?.name || 'Administración'
+    };
+    setNews([newItem, ...news]);
+    setShowAddForm(false);
+    setFormData({ title: '', content: '', type: 'info' });
+    notify('Novedad Publicada', 'Se ha notificado a toda la red correctamente.', 'success');
+  };
+
   const handleActivatePush = async () => {
     await requestPermission();
     notify('Sistema Activo', 'Has activado las notificaciones push correctamente.', 'success');
   };
 
-  const news = [
-    {
-      id: 1,
-      title: 'Aviso: Mantenimiento de Servidores',
-      content: 'El domingo 28 de Marzo realizaremos mejoras en el sistema de rastreo. El servicio podría verse interrumpido de 02:00 a 04:00 AM.',
-      type: 'info',
-      date: 'Hoy, 10:45 AM',
-      author: 'Soporte IT'
-    },
-    {
-      id: 2,
-      title: '¡Nueva Zona de Cobertura!',
-      content: 'Hemos expandido nuestras operaciones al sector de Cumbayá y Tumbaco. Ya puedes registrar pedidos para estas zonas con entregas el mismo día.',
-      type: 'success',
-      date: 'Ayer, 08:30 PM',
-      author: 'Operaciones'
-    },
-    {
-      id: 3,
-      title: 'Retrasos por Condiciones Climáticas',
-      content: 'Debido a las fuertes lluvias en la zona sur, las entregas podrían presentar retrasos de 30-45 minutos. Agradecemos su comprensión.',
-      type: 'warning',
-      date: 'Ayer, 02:20 PM',
-      author: 'Logística'
-    },
-    {
-      id: 4,
-      title: 'Actualización en Tarifas de Combustible',
-      content: 'Se informa un ajuste del 2% en las tarifas base de envío de larga distancia debido al incremento estacional de combustibles.',
-      type: 'info',
-      date: '22 Mar, 2024',
-      author: 'Administración'
-    }
-  ];
-
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      <AnimatePresence>
+        {showAddForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAddForm(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-lg bg-white rounded-[40px] overflow-hidden shadow-2xl relative z-50 text-left"
+            >
+              <div className="p-10">
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-ktm-black leading-none">Publicar <span className="text-ktm-orange">Novedad</span></h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 px-1">Comunícalo a toda la red Kilometro 0</p>
+                  </div>
+                  <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <X className="w-6 h-6 text-gray-400" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddNews} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Título del Aviso</label>
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="Ej. ¡Nueva promoción de envíos!"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:border-ktm-orange outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Contenido / Mensaje</label>
+                    <textarea 
+                      required
+                      placeholder="Escribe aquí el cuerpo del mensaje..."
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold min-h-[140px] focus:border-ktm-orange outline-none transition-all resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['info', 'warning', 'success'] as const).map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, type })}
+                        className={`py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                          formData.type === type 
+                            ? 'bg-ktm-black text-white border-ktm-black' 
+                            : 'bg-white border-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button type="submit" className="w-full btn-primary py-5 font-black text-sm flex items-center justify-center gap-2">
+                    <Send className="w-5 h-5" />
+                    PUBLICAR AHORA
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="flex justify-between items-center bg-zinc-900 text-white p-6 rounded-2xl shadow-xl overflow-hidden relative">
         <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight">Novedades y Avisos</h1>
@@ -80,6 +198,14 @@ export default function NewsFeed() {
         </div>
 
         <div className="flex -space-x-2 relative z-10">
+          {role === 'admin' && (
+            <button 
+              onClick={() => setShowAddForm(true)}
+              className="w-12 h-12 rounded-2xl bg-ktm-orange text-white flex items-center justify-center shadow-xl shadow-orange-500/30 hover:scale-110 transition-transform mr-4"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          )}
           {[1,2,3].map(i => (
             <div key={i} className="w-8 h-8 rounded-full border-2 border-zinc-900 bg-zinc-800" />
           ))}

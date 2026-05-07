@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Order } from './types';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { Order } from '../types';
 
 interface OrderContextType {
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'date'>) => void;
+  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'trackingNumber'>) => void;
   updateOrder: (id: string, updates: Partial<Order>) => void;
 }
 
@@ -20,15 +20,33 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     ];
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('ktm_orders', JSON.stringify(orders));
+    
+    // Sync with Google Sheets
+    const syncWithSheets = async () => {
+      try {
+        await fetch('/api/sync/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orders)
+        });
+      } catch (err) {
+        console.error('Failed to sync orders with sheets:', err);
+      }
+    };
+    
+    const timeoutId = setTimeout(syncWithSheets, 2000); // Debounce sync
+    return () => clearTimeout(timeoutId);
   }, [orders]);
 
-  const addOrder = (orderData: Omit<Order, 'id' | 'date'>) => {
+  const addOrder = (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'trackingNumber'>) => {
     const newOrder: Order = {
       ...orderData,
       id: `ORD-${Math.floor(Math.random() * 900) + 100}`,
-      date: new Date().toISOString().split('T')[0]
+      trackingNumber: `KTM-REC-${Math.floor(Math.random() * 9000) + 1000}`,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
     };
     setOrders(prev => [newOrder, ...prev]);
   };

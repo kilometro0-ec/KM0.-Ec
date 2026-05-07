@@ -3,7 +3,11 @@ import { motion } from 'motion/react';
 
 import { useAuth } from '../context/AuthContext';
 
-export default function Dashboard() {
+interface DashboardProps {
+  setActiveTab: (tab: string) => void;
+}
+
+export default function Dashboard({ setActiveTab }: DashboardProps) {
   const { role } = useAuth();
 
   const statsByRole = {
@@ -108,7 +112,11 @@ export default function Dashboard() {
           </div>
           <div className="space-y-4">
             {recentNews.map((news) => (
-              <div key={news.id} className="flex gap-4 p-4 rounded-2xl hover:bg-zinc-50 transition-all cursor-pointer border border-transparent hover:border-gray-100 active:scale-[0.98]">
+              <div 
+                key={news.id} 
+                onClick={() => setActiveTab('news')}
+                className="flex gap-4 p-4 rounded-2xl hover:bg-zinc-50 transition-all cursor-pointer border border-transparent hover:border-gray-100 active:scale-[0.98]"
+              >
                 <div className={`w-1 h-8 rounded-full mt-1 ${
                   news.type === 'warning' ? 'bg-ktm-orange' : news.type === 'alert' ? 'bg-ktm-black' : 'bg-gray-300'
                 }`} />
@@ -119,7 +127,10 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <button className="mt-auto w-full text-center text-sm font-bold text-zinc-400 hover:text-zinc-900 py-4 border-t border-gray-50 transition-colors">
+          <button 
+            onClick={() => setActiveTab('news')}
+            className="mt-auto w-full text-center text-sm font-bold text-zinc-400 hover:text-zinc-900 py-4 border-t border-gray-50 transition-colors"
+          >
             Ver todas las notificaciones
           </button>
         </div>

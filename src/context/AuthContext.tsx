@@ -16,6 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => boolean;
   register: (user: User) => void;
   updateUser: (data: Partial<User>) => void;
+  deleteUser: (email: string) => void;
   logout: () => void;
   setRole: (role: UserRole) => void;
   user: User | null;
@@ -41,6 +42,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     localStorage.setItem('ktm_users', JSON.stringify(registeredUsers));
+
+    // Sync with Google Sheets
+    const syncWithSheets = async () => {
+      try {
+        await fetch('/api/sync/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(registeredUsers)
+        });
+      } catch (err) {
+        console.error('Failed to sync users with sheets:', err);
+      }
+    };
+    
+    const timeoutId = setTimeout(syncWithSheets, 2000); 
+    return () => clearTimeout(timeoutId);
   }, [registeredUsers]);
 
   const login = (email: string, password: string) => {
@@ -65,6 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRegisteredUsers(prev => prev.map(u => u.email === currentUser.email ? updated : u));
   };
 
+  const deleteUser = (email: string) => {
+    setRegisteredUsers(prev => prev.filter(u => u.email !== email));
+  };
+
   const logout = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
@@ -77,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       updateUser,
+      deleteUser,
       logout,
       setRole,
       user: currentUser,

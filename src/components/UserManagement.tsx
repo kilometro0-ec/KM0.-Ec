@@ -21,12 +21,19 @@ import { UserProfile, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 export default function UserManagement() {
-  const { role, user: currentUser, registeredUsers, register } = useAuth();
+  const { role, user: currentUser, registeredUsers, register, deleteUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const handleDelete = (email: string) => {
+    if (confirm('¿Estás seguro de eliminar este usuario?')) {
+      deleteUser(email);
+      setSelectedUser(null);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -321,7 +328,13 @@ export default function UserManagement() {
 
                   <div className="space-y-2">
                     <button className="w-full py-4 bg-black text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-ktm-orange transition-all shadow-xl shadow-black/10">Descargar Credenciales</button>
-                    <button className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-100 transition-all">Suspender Acceso</button>
+                    <button 
+                      onClick={() => handleDelete(selectedUser.email)}
+                      className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-100 transition-all"
+                    >
+                      Eliminar Acceso DEFINITIVO
+                    </button>
+                    <button className="w-full py-4 bg-gray-50 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 transition-all">Suspender Temporalmente</button>
                   </div>
                 </div>
               </div>

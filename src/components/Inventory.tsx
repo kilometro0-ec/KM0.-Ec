@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Package, 
@@ -13,43 +13,67 @@ import {
   Box,
   Truck,
   MoreVertical,
-  ShoppingBag
+  ShoppingBag,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StockItem } from '../types';
-
-const MOCK_STOCK: StockItem[] = [
-  {
-    id: '1',
-    productId: 'P-001',
-    productName: 'Camisetas Algodón XL',
-    quantity: 50,
-    status: 'sent',
-    shopId: 'tienda-1',
-    sentAt: '2024-03-24 10:00'
-  },
-  {
-    id: '2',
-    productId: 'P-002',
-    productName: 'Zapatillas Running 42',
-    quantity: 12,
-    status: 'received',
-    shopId: 'tienda-1',
-    sentAt: '2024-03-23 15:30',
-    receivedAt: '2024-03-23 18:00',
-    verifiedBy: 'Admin LogiDash'
-  }
-];
-
 import { useNotifications } from '../context/NotificationContext';
 
 export default function Inventory() {
   const { role } = useAuth();
   const { notify } = useNotifications();
-  const [stockItems, setStockItems] = useState<StockItem[]>(MOCK_STOCK);
+  const [stockItems, setStockItems] = useState<StockItem[]>(() => {
+    const saved = localStorage.getItem('ktm_inventory');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: '1',
+        productId: 'P-001',
+        productName: 'Camisetas Algodón XL',
+        quantity: 50,
+        status: 'sent',
+        shopId: 'tienda-1',
+        sentAt: '2024-03-24 10:00'
+      },
+      {
+        id: '2',
+        productId: 'P-002',
+        productName: 'Zapatillas Running 42',
+        quantity: 12,
+        status: 'received',
+        shopId: 'tienda-1',
+        sentAt: '2024-03-23 15:30',
+        receivedAt: '2024-03-23 18:00',
+        verifiedBy: 'Admin LogiDash'
+      }
+    ];
+  });
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [newStock, setNewStock] = useState({ productName: '', quantity: 0 });
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [receivingItem, setReceivingItem] = useState<StockItem | null>(null);
+  const [receiveData, setReceiveData] = useState({ quantity: 0, notes: '' });
+
+  useEffect(() => {
+    localStorage.setItem('ktm_inventory', JSON.stringify(stockItems));
+
+    const syncWithSheets = async () => {
+      try {
+        await fetch('/api/sync/inventory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(stockItems)
+        });
+      } catch (err) {
+        console.error('Failed to sync inventory with sheets:', err);
+      }
+    };
+    
+    const timeoutId = setTimeout(syncWithSheets, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [stockItems]);
 
   const handleAction = (action: string, productName: string) => {
     notify('Acción Procesada', `${action}: ${productName}`, 'success');
@@ -72,12 +96,28 @@ export default function Inventory() {
     setNewStock({ productName: '', quantity: 0 });
   };
 
-  const handleVerifyStock = (id: string) => {
+  const startReceiving = (item: StockItem) => {
+    setReceivingItem(item);
+    setReceiveData({ quantity: item.quantity, notes: '' });
+  };
+
+  const handleVerifyStock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receivingItem) return;
+
     setStockItems(prev => prev.map(item => 
-      item.id === id 
-        ? { ...item, status: 'received', receivedAt: new Date().toLocaleString(), verifiedBy: 'Admin Central' } 
+      item.id === receivingItem.id 
+        ? { 
+            ...item, 
+            status: 'received', 
+            receivedAt: new Date().toLocaleString(), 
+            verifiedBy: 'Admin Central',
+            quantity: receiveData.quantity
+          } 
         : item
     ));
+    setReceivingItem(null);
+    notify('Material Recibido', `Se ha verificado el ingreso de ${receivingItem.productName}`, 'success');
   };
 
   return (
@@ -161,6 +201,74 @@ export default function Inventory() {
           </div>
         )}
       </AnimatePresence>
+      
+      <AnimatePresence>
+        {receivingItem && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white w-full max-w-lg rounded-[40px] overflow-hidden shadow-2xl p-10"
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-ktm-black leading-none">Verificación de <span className="text-ktm-orange">Ingreso</span></h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">Confirma la cantidad física recibida</p>
+                </div>
+                <button onClick={() => setReceivingItem(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleVerifyStock} className="space-y-6">
+                <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Producto a Recibir</p>
+                  <p className="font-black italic text-xl text-ktm-black uppercase tracking-tighter">{receivingItem.productName}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Cantidad Esperada</label>
+                    <div className="w-full px-6 py-4 bg-gray-100 border border-gray-200 rounded-2xl text-sm font-black text-gray-400 italic">
+                      {receivingItem.quantity} Unidades
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-ktm-orange uppercase tracking-widest px-1">Cantidad Recibida</label>
+                    <input 
+                      required
+                      type="number" 
+                      min="0"
+                      value={receiveData.quantity}
+                      onChange={(e) => setReceiveData({ ...receiveData, quantity: parseInt(e.target.value) })}
+                      className="w-full px-6 py-4 bg-white border-2 border-ktm-orange rounded-2xl text-sm font-black focus:ring-4 focus:ring-orange-100 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Novedades o Detalles</label>
+                  <textarea 
+                    placeholder="Ej: Empaque dañado, llegó una unidad menos..."
+                    value={receiveData.notes}
+                    onChange={(e) => setReceiveData({ ...receiveData, notes: e.target.value })}
+                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold min-h-[120px] focus:border-ktm-orange outline-none transition-all resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setReceivingItem(null)} className="flex-1 px-8 py-4 bg-gray-100 text-ktm-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors">Cancelar</button>
+                  <button type="submit" className="flex-1 btn-primary py-4 font-black text-[10px] flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    CONFIRMAR RECEPCIÓN
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="card-utility bg-white border border-gray-100 overflow-hidden p-0">
         <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
@@ -230,7 +338,7 @@ export default function Inventory() {
                     <div className="flex justify-end gap-2 relative">
                       {role === 'admin' && item.status === 'sent' && (
                         <button 
-                          onClick={() => handleVerifyStock(item.id)}
+                          onClick={() => startReceiving(item)}
                           className="btn-primary px-4 py-2 text-[10px] flex items-center gap-2"
                         >
                           <Truck className="w-3 h-3" />

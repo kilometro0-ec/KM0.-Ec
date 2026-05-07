@@ -51,10 +51,17 @@ function AppContent() {
     setIsEditingProfile(false);
   };
 
+  const handleNotificationClick = (type: string) => {
+    if (type === 'pedido') setActiveTab('orders');
+    if (type === 'inventario') setActiveTab('inventory');
+    if (type === 'pago') setActiveTab('payments');
+    setShowNotifications(false);
+  };
+
   const notifications = [
-    { id: 1, title: 'Nuevo Pedido KTM-REC-992', time: 'Hace 5 min', unread: true },
-    { id: 2, title: 'Inventario Actualizado', time: 'Hace 1 hora', unread: false },
-    { id: 3, title: 'Pago Verificado', time: 'Hace 3 horas', unread: false },
+    { id: 1, title: 'Nuevo Pedido KTM-REC-992', time: 'Hace 5 min', unread: true, type: 'pedido' },
+    { id: 2, title: 'Inventario Actualizado', time: 'Hace 1 hora', unread: false, type: 'inventario' },
+    { id: 3, title: 'Pago Verificado', time: 'Hace 3 horas', unread: false, type: 'pago' },
   ];
 
   return (
@@ -101,7 +108,11 @@ function AppContent() {
                         </div>
                         <div className="max-h-96 overflow-y-auto">
                           {notifications.map(n => (
-                            <div key={n.id} className="p-4 border-b border-gray-50 hover:bg-orange-50/30 transition-colors cursor-pointer group">
+                            <div 
+                              key={n.id} 
+                              onClick={() => handleNotificationClick(n.type)}
+                              className="p-4 border-b border-gray-50 hover:bg-orange-50/30 transition-colors cursor-pointer group"
+                            >
                               <p className="text-sm font-bold text-ktm-black group-hover:text-ktm-orange transition-colors">{n.title}</p>
                               <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
                             </div>
@@ -196,7 +207,7 @@ function AppContent() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              {activeTab === 'dashboard' && <Dashboard />}
+              {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
               {activeTab === 'orders' && <Orders />}
               {activeTab === 'users' && (role === 'admin' ? <UserManagement /> : <StaffManagement />)}
               {activeTab === 'inventory' && <Inventory />}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, AlertTriangle, Info, X } from 'lucide-react';
+import { Bell, AlertTriangle, Info, X, CheckCircle2 } from 'lucide-react';
 
 interface Notification {
   id: number;
