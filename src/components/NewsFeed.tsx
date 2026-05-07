@@ -9,7 +9,7 @@ export default function NewsFeed() {
   const { requestPermission, permission, notify } = useNotifications();
   const [showAddForm, setShowAddForm] = useState(false);
   const [news, setNews] = useState(() => {
-    const saved = localStorage.getItem('ktm_news');
+    const saved = localStorage.getItem('km0_news');
     if (saved) return JSON.parse(saved);
     return [
       {
@@ -46,7 +46,7 @@ export default function NewsFeed() {
   });
 
   useEffect(() => {
-    localStorage.setItem('ktm_news', JSON.stringify(news));
+    localStorage.setItem('km0_news', JSON.stringify(news));
 
     const syncWithSheets = async () => {
       try {
@@ -106,7 +106,7 @@ export default function NewsFeed() {
               <div className="p-10">
                 <div className="flex justify-between items-start mb-8">
                   <div>
-                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-ktm-black leading-none">Publicar <span className="text-ktm-orange">Novedad</span></h3>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-km0-black leading-none">Publicar <span className="text-km0-orange">Novedad</span></h3>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 px-1">Comunícalo a toda la red Kilometro 0</p>
                   </div>
                   <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -123,7 +123,7 @@ export default function NewsFeed() {
                       placeholder="Ej. ¡Nueva promoción de envíos!"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:border-ktm-orange outline-none transition-all"
+                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:border-km0-orange outline-none transition-all"
                     />
                   </div>
 
@@ -134,7 +134,7 @@ export default function NewsFeed() {
                       placeholder="Escribe aquí el cuerpo del mensaje..."
                       value={formData.content}
                       onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold min-h-[140px] focus:border-ktm-orange outline-none transition-all resize-none"
+                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold min-h-[140px] focus:border-km0-orange outline-none transition-all resize-none"
                     />
                   </div>
 
@@ -146,7 +146,7 @@ export default function NewsFeed() {
                         onClick={() => setFormData({ ...formData, type })}
                         className={`py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
                           formData.type === type 
-                            ? 'bg-ktm-black text-white border-ktm-black' 
+                            ? 'bg-km0-black text-white border-km0-black' 
                             : 'bg-white border-gray-100 text-gray-400'
                         }`}
                       >
@@ -201,7 +201,7 @@ export default function NewsFeed() {
           {role === 'admin' && (
             <button 
               onClick={() => setShowAddForm(true)}
-              className="w-12 h-12 rounded-2xl bg-ktm-orange text-white flex items-center justify-center shadow-xl shadow-orange-500/30 hover:scale-110 transition-transform mr-4"
+              className="w-12 h-12 rounded-2xl bg-km0-orange text-white flex items-center justify-center shadow-xl shadow-orange-500/30 hover:scale-110 transition-transform mr-4"
             >
               <Plus className="w-6 h-6" />
             </button>

@@ -65,9 +65,9 @@ export default function StaffManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end border-b-2 border-ktm-orange pb-6">
+      <div className="flex justify-between items-end border-b-2 border-km0-orange pb-6">
         <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-ktm-black">Mi <span className="text-ktm-orange">Equipo</span></h1>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-km0-black">Mi <span className="text-km0-orange">Equipo</span></h1>
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 px-1">Gestión de vendedoras y personal de tienda</p>
         </div>
         <button 
@@ -80,13 +80,13 @@ export default function StaffManagement() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card-utility p-6 border-l-4 border-l-ktm-orange">
+        <div className="card-utility p-6 border-l-4 border-l-km0-orange">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Staff</p>
-          <div className="text-4xl font-black italic tracking-tighter text-ktm-black">{myStaff.length}</div>
+          <div className="text-4xl font-black italic tracking-tighter text-km0-black">{myStaff.length}</div>
         </div>
         <div className="card-utility p-6 border-l-4 border-l-black">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</p>
-          <div className="text-4xl font-black italic tracking-tighter text-ktm-black uppercase">Activo</div>
+          <div className="text-4xl font-black italic tracking-tighter text-km0-black uppercase">Activo</div>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ export default function StaffManagement() {
               <tr key={staff.email} className="hover:bg-orange-50/30 transition-colors group">
                 <td className="px-8 py-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-ktm-orange group-hover:text-white transition-colors">
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-km0-orange group-hover:text-white transition-colors">
                       <UserIcon className="w-5 h-5" />
                     </div>
                     <span className="font-bold text-zinc-900">{staff.name}</span>
@@ -164,7 +164,7 @@ export default function StaffManagement() {
               <div className="p-8 bg-black">
                 <div className="flex justify-between items-center text-white mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-ktm-orange rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-km0-orange rounded-xl flex items-center justify-center">
                       <UserPlus className="w-6 h-6" />
                     </div>
                     <div>
@@ -187,7 +187,7 @@ export default function StaffManagement() {
                         placeholder="Nombre de la vendedora"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full pl-12 pr-4 py-4 bg-white/[0.05] border border-white/[0.1] rounded-2xl text-sm text-white placeholder:text-white/20 focus:border-ktm-orange outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-4 bg-white/[0.05] border border-white/[0.1] rounded-2xl text-sm text-white placeholder:text-white/20 focus:border-km0-orange outline-none transition-all"
                       />
                     </div>
                     <div className="relative">
@@ -198,7 +198,7 @@ export default function StaffManagement() {
                         placeholder="Correo de acceso"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full pl-12 pr-4 py-4 bg-white/[0.05] border border-white/[0.1] rounded-2xl text-sm text-white placeholder:text-white/20 focus:border-ktm-orange outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-4 bg-white/[0.05] border border-white/[0.1] rounded-2xl text-sm text-white placeholder:text-white/20 focus:border-km0-orange outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export default function StaffManagement() {
                           onClick={() => togglePermission(p.id)}
                           className={`p-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all text-center ${
                             formData.permissions.includes(p.id)
-                              ? 'bg-ktm-orange border-ktm-orange text-white'
+                              ? 'bg-km0-orange border-km0-orange text-white'
                               : 'bg-white/5 border-white/10 text-white/40'
                           }`}
                          >
@@ -224,7 +224,7 @@ export default function StaffManagement() {
                   </div>
 
                   <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl flex gap-3 italic">
-                    <ShieldCheck className="w-5 h-5 text-ktm-orange shrink-0" />
+                    <ShieldCheck className="w-5 h-5 text-km0-orange shrink-0" />
                     <p className="text-[10px] text-orange-200">Clave predeterminada: <span className="font-black text-white ml-1">123456789</span></p>
                   </div>
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { UserRole } from '../types';
+import { useNotifications } from './NotificationContext';
 
 interface User {
   name: string;
@@ -8,6 +9,7 @@ interface User {
   password?: string;
   parentId?: string;
   permissions?: string[];
+  status?: 'active' | 'suspended' | 'inactive';
 }
 
 interface AuthContextType {
@@ -16,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => boolean;
   register: (user: User) => void;
   updateUser: (data: Partial<User>) => void;
+  updateAnyUser: (email: string, data: Partial<User>) => void;
   deleteUser: (email: string) => void;
   logout: () => void;
   setRole: (role: UserRole) => void;
@@ -26,12 +29,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { notify } = useNotifications();
   const [role, setRole] = useState<UserRole>('admin');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const [registeredUsers, setRegisteredUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('ktm_users');
+    const saved = localStorage.getItem('km0_users');
     if (saved) return JSON.parse(saved);
     return [
       { name: 'Admin Kilometro 0', email: '12345', password: '12345', role: 'admin' },
@@ -41,18 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    localStorage.setItem('ktm_users', JSON.stringify(registeredUsers));
+    localStorage.setItem('km0_users', JSON.stringify(registeredUsers));
 
     // Sync with Google Sheets
     const syncWithSheets = async () => {
       try {
-        await fetch('/api/sync/users', {
+        const response = await fetch('/api/sync/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(registeredUsers)
         });
-      } catch (err) {
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Server error during sync');
+        }
+      } catch (err: any) {
         console.error('Failed to sync users with sheets:', err);
+        notify('Error de Sincronización', `No se pudo enviar los usuarios a Google Sheets: ${err.message}`, 'alert' as any);
       }
     };
     
@@ -82,6 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRegisteredUsers(prev => prev.map(u => u.email === currentUser.email ? updated : u));
   };
 
+  const updateAnyUser = (email: string, data: Partial<User>) => {
+    setRegisteredUsers(prev => prev.map(u => u.email === email ? { ...u, ...data } : u));
+  };
+
   const deleteUser = (email: string) => {
     setRegisteredUsers(prev => prev.filter(u => u.email !== email));
   };
@@ -98,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       updateUser,
+      updateAnyUser,
       deleteUser,
       logout,
       setRole,

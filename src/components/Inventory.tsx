@@ -24,7 +24,7 @@ export default function Inventory() {
   const { role } = useAuth();
   const { notify } = useNotifications();
   const [stockItems, setStockItems] = useState<StockItem[]>(() => {
-    const saved = localStorage.getItem('ktm_inventory');
+    const saved = localStorage.getItem('km0_inventory');
     if (saved) return JSON.parse(saved);
     return [
       {
@@ -57,17 +57,22 @@ export default function Inventory() {
   const [receiveData, setReceiveData] = useState({ quantity: 0, notes: '' });
 
   useEffect(() => {
-    localStorage.setItem('ktm_inventory', JSON.stringify(stockItems));
+    localStorage.setItem('km0_inventory', JSON.stringify(stockItems));
 
     const syncWithSheets = async () => {
       try {
-        await fetch('/api/sync/inventory', {
+        const response = await fetch('/api/sync/inventory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(stockItems)
         });
-      } catch (err) {
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Server error during sync');
+        }
+      } catch (err: any) {
         console.error('Failed to sync inventory with sheets:', err);
+        notify('Error de Sincronización', `No se pudo enviar el inventario a Google Sheets: ${err.message}`, 'alert' as any);
       }
     };
     
@@ -122,9 +127,9 @@ export default function Inventory() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-end border-b-2 border-ktm-orange pb-6">
+      <div className="flex justify-between items-end border-b-2 border-km0-orange pb-6">
         <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-ktm-black">Inventario & <span className="text-ktm-orange">Stock</span></h1>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-km0-black">Inventario & <span className="text-km0-orange">Stock</span></h1>
           <p className="text-gray-500">
             {role === 'admin' 
               ? 'Verifica y confirma la recepción de stock de las tiendas' 
@@ -144,12 +149,12 @@ export default function Inventory() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'En Envío', value: stockItems.filter(i => i.status === 'sent').length, color: 'text-ktm-orange', bg: 'bg-orange-50' },
-          { label: 'Recibidos', value: stockItems.filter(i => i.status === 'received').length, color: 'text-ktm-black', bg: 'bg-gray-50' },
+          { label: 'En Envío', value: stockItems.filter(i => i.status === 'sent').length, color: 'text-km0-orange', bg: 'bg-orange-50' },
+          { label: 'Recibidos', value: stockItems.filter(i => i.status === 'received').length, color: 'text-km0-black', bg: 'bg-gray-50' },
           { label: 'Discrepancias', value: 0, color: 'text-red-600', bg: 'bg-red-50' },
-          { label: 'Total Unidades', value: stockItems.reduce((acc, i) => acc + i.quantity, 0), color: 'text-ktm-orange', bg: 'bg-orange-50' },
+          { label: 'Total Unidades', value: stockItems.reduce((acc, i) => acc + i.quantity, 0), color: 'text-km0-orange', bg: 'bg-orange-50' },
         ].map((stat, i) => (
-          <div key={i} className={`card-utility p-6 border-b-4 ${stat.color === 'text-ktm-orange' ? 'border-b-ktm-orange' : 'border-b-ktm-black'} flex flex-col gap-2`}>
+          <div key={i} className={`card-utility p-6 border-b-4 ${stat.color === 'text-km0-orange' ? 'border-b-km0-orange' : 'border-b-km0-black'} flex flex-col gap-2`}>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
             <div className={`text-3xl font-black italic tracking-tighter ${stat.color}`}>{stat.value}</div>
           </div>
@@ -213,7 +218,7 @@ export default function Inventory() {
             >
               <div className="flex justify-between items-start mb-8">
                 <div>
-                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-ktm-black leading-none">Verificación de <span className="text-ktm-orange">Ingreso</span></h3>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-km0-black leading-none">Verificación de <span className="text-km0-orange">Ingreso</span></h3>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">Confirma la cantidad física recibida</p>
                 </div>
                 <button onClick={() => setReceivingItem(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -224,7 +229,7 @@ export default function Inventory() {
               <form onSubmit={handleVerifyStock} className="space-y-6">
                 <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Producto a Recibir</p>
-                  <p className="font-black italic text-xl text-ktm-black uppercase tracking-tighter">{receivingItem.productName}</p>
+                  <p className="font-black italic text-xl text-km0-black uppercase tracking-tighter">{receivingItem.productName}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,14 +240,14 @@ export default function Inventory() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-ktm-orange uppercase tracking-widest px-1">Cantidad Recibida</label>
+                    <label className="text-[10px] font-black text-km0-orange uppercase tracking-widest px-1">Cantidad Recibida</label>
                     <input 
                       required
                       type="number" 
                       min="0"
                       value={receiveData.quantity}
                       onChange={(e) => setReceiveData({ ...receiveData, quantity: parseInt(e.target.value) })}
-                      className="w-full px-6 py-4 bg-white border-2 border-ktm-orange rounded-2xl text-sm font-black focus:ring-4 focus:ring-orange-100 outline-none transition-all"
+                      className="w-full px-6 py-4 bg-white border-2 border-km0-orange rounded-2xl text-sm font-black focus:ring-4 focus:ring-orange-100 outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -253,12 +258,12 @@ export default function Inventory() {
                     placeholder="Ej: Empaque dañado, llegó una unidad menos..."
                     value={receiveData.notes}
                     onChange={(e) => setReceiveData({ ...receiveData, notes: e.target.value })}
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold min-h-[120px] focus:border-ktm-orange outline-none transition-all resize-none"
+                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold min-h-[120px] focus:border-km0-orange outline-none transition-all resize-none"
                   />
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setReceivingItem(null)} className="flex-1 px-8 py-4 bg-gray-100 text-ktm-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors">Cancelar</button>
+                  <button type="button" onClick={() => setReceivingItem(null)} className="flex-1 px-8 py-4 bg-gray-100 text-km0-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary py-4 font-black text-[10px] flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-5 h-5" />
                     CONFIRMAR RECEPCIÓN
@@ -319,7 +324,7 @@ export default function Inventory() {
                     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       item.status === 'received' 
                         ? 'bg-black text-white' 
-                        : 'bg-orange-50 text-ktm-orange border border-orange-100 anim-pulse'
+                        : 'bg-orange-50 text-km0-orange border border-orange-100 anim-pulse'
                     }`}>
                       {item.status === 'received' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                       {item.status === 'received' ? 'En Bodega' : 'En camino'}
@@ -364,9 +369,9 @@ export default function Inventory() {
                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                                 className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-20 py-2 overflow-hidden"
                               >
-                                <button onClick={() => handleAction('Editar', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-ktm-orange transition-colors">Editar Producto</button>
-                                <button onClick={() => handleAction('Ver Historial', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-ktm-orange transition-colors">Ver Historial</button>
-                                <button onClick={() => handleAction('Descargar QR', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-ktm-orange transition-colors border-t border-gray-50">Descargar QR</button>
+                                <button onClick={() => handleAction('Editar', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors">Editar Producto</button>
+                                <button onClick={() => handleAction('Ver Historial', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors">Ver Historial</button>
+                                <button onClick={() => handleAction('Descargar QR', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors border-t border-gray-50">Descargar QR</button>
                                 <button onClick={() => handleAction('Eliminar', item.productName)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50">Eliminar</button>
                               </motion.div>
                             </>
@@ -384,11 +389,11 @@ export default function Inventory() {
 
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-ktm-orange rounded-2xl flex items-center justify-center text-white shadow-xl shadow-orange-500/30 rotate-3">
+          <div className="w-12 h-12 bg-km0-orange rounded-2xl flex items-center justify-center text-white shadow-xl shadow-orange-500/30 rotate-3">
             <Clock className="w-6 h-6 -rotate-3" />
           </div>
           <div>
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter text-ktm-black">Registro de <span className="text-ktm-orange">Movimientos</span></h2>
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter text-km0-black">Registro de <span className="text-km0-orange">Movimientos</span></h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold px-1">Log de telemetría de stock</p>
           </div>
         </div>
@@ -416,7 +421,7 @@ export default function Inventory() {
                     <ArrowRight className="w-3 h-3" />
                     <div className="flex items-center gap-1 text-zinc-900">
                       <Box className="w-3 h-3" />
-                      Bodega Central (KTM 0)
+                      Bodega Central (KM0 0)
                     </div>
                   </div>
                </div>

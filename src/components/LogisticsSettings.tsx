@@ -97,6 +97,27 @@ export default function LogisticsSettings() {
               <p className="text-xs text-blue-700/70 leading-relaxed">Considera un margen de al menos 20% para cubrir costos operativos y de mantenimiento del sistema.</p>
             </div>
           </div>
+
+          <div className="card-utility p-6 border-l-4 border-l-km0-orange bg-white">
+            <h3 className="text-xs font-black uppercase tracking-widest text-km0-black mb-4">Estado de Sincronización</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-[10px] font-bold">
+                <span className="text-gray-400">GOOGLE SHEETS ID:</span>
+                <span className="text-km0-black truncate max-w-[150px] font-mono">Configurado en .env</span>
+              </div>
+              <p className="text-[9px] text-gray-500 leading-relaxed">
+                Para que la sincronización funcione, asegúrate de haber compartido tu hoja de cálculo con el email de la Cuenta de Servicio de Google.
+              </p>
+              <div className="pt-2">
+                <button 
+                  onClick={() => window.open('https://docs.google.com/spreadsheets/u/0/', '_blank')}
+                  className="text-[10px] font-black text-km0-orange uppercase hover:underline"
+                >
+                  Abrir Drive →
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

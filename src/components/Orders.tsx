@@ -1,32 +1,87 @@
 import React, { useState } from 'react';
-import { Search, Filter, MoreVertical, CheckCircle2, Clock, Truck, AlertCircle, CreditCard, Wallet, X } from 'lucide-react';
+import { Search, Filter, MoreVertical, CheckCircle2, Clock, Truck, AlertCircle, CreditCard, Wallet, X, Bike, Trash2, RefreshCw, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Order } from '../types';
 import { useAuth } from '../context/AuthContext';
 import DeliveryConfirmation from './DeliveryConfirmation';
-
-const MOCK_ORDERS: Order[] = [
-  // ... existing mock orders
-];
-
 import { useOrders } from '../context/OrderContext';
+import { useNotifications } from '../context/NotificationContext';
 
 export default function Orders() {
-  const { role } = useAuth();
-  const { orders, updateOrder } = useOrders();
+  const { role, registeredUsers } = useAuth();
+  const { orders, updateOrder, deleteOrder, restoreOrder, permanentlyDeleteOrder, refreshOrders } = useOrders();
+  const { notify } = useNotifications();
   const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isAssigning, setIsAssigning] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [showTrash, setShowTrash] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const riders = registeredUsers.filter(u => u.role === 'motorizado');
+
+  const handleAssign = (orderId: string, rider: any) => {
+    updateOrder(orderId, { 
+      riderId: rider.id || rider.email, 
+      riderName: rider.name,
+      status: 'in_transit'
+    });
+    setIsAssigning(null);
+    notify('Motorizado Asignado', `${rider.name} ha sido asignado al pedido.`, 'success');
+  };
+
+  const handleCancel = (orderId: string) => {
+    if (confirm('¿Estás seguro de cancelar este pedido?')) {
+      updateOrder(orderId, { status: 'cancelled' });
+      setActiveMenuId(null);
+      notify('Pedido Cancelado', 'El estado del pedido se ha actualizado a cancelado.', 'warning');
+    }
+  };
+
+  const handleDelete = (orderId: string) => {
+    if (confirm('¿Mover este pedido a la papelera? Se borrará permanentemente en 30 días.')) {
+      deleteOrder(orderId);
+      setActiveMenuId(null);
+    }
+  };
+
+  const handlePermanentDelete = (orderId: string) => {
+    if (confirm('¿BORRAR PERMANENTEMENTE? Esta acción no se puede deshacer.')) {
+      permanentlyDeleteOrder(orderId);
+      setActiveMenuId(null);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshOrders();
+    setIsRefreshing(false);
+  };
+
+  const handlePrint = (order: Order) => {
+    notify('Generando Guía', 'La guía de impresión se está descargando...', 'success');
+    const content = `GUIA DE REMISION KM0 - ${order.trackingNumber}\nCliente: ${order.customerName}\nDireccion: ${order.deliveryAddress}\nMonto: $${order.amount}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `guia_${order.trackingNumber}.txt`;
+    a.click();
+    setActiveMenuId(null);
+  };
   
   const filteredOrders = orders.filter(order => {
+    const isDeleted = !!order.isDeleted;
+    if (showTrash !== isDeleted) return false;
+
     const matchesSearch = 
       order.trackingNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    const matchesStatus = showTrash || statusFilter === 'all' || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -69,14 +124,14 @@ export default function Orders() {
   };
 
   const title = {
-    admin: 'Gestión de Pedidos',
-    tienda: 'Mis Pedidos Enviados',
+    admin: showTrash ? 'Papelera de Reciclaje' : 'Gestión de Pedidos',
+    tienda: showTrash ? 'Pedidos Eliminados' : 'Mis Pedidos Enviados',
     motorizado: 'Entregas Asignadas'
   }[role];
 
   const subtitle = {
-    admin: 'Administra y monitorea todas las entregas del sistema',
-    tienda: 'Seguimiento de tus paquetes en tiempo real',
+    admin: showTrash ? 'Los pedidos se eliminan automáticamente después de 30 días' : 'Administra y monitorea todas las entregas del sistema',
+    tienda: showTrash ? 'Recupera tus pedidos borrados recientemente' : 'Seguimiento de tus paquetes en tiempo real',
     motorizado: 'Rutas y entregas pendientes para hoy'
   }[role];
 
@@ -92,17 +147,44 @@ export default function Orders() {
         )}
       </AnimatePresence>
 
-      <div className="flex justify-between items-center border-b-2 border-ktm-orange pb-6">
-        <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-ktm-black">{title.replace('Gestión', 'Control')}</h1>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 px-1">{subtitle}</p>
+      <div className="flex justify-between items-center border-b-2 border-km0-orange pb-6">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter text-km0-black">
+              {showTrash ? 'PAPELERA' : title.replace('Gestión', 'Control')}
+            </h1>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 px-1">{subtitle}</p>
+          </div>
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`p-2 rounded-full hover:bg-gray-100 transition-all ${isRefreshing ? 'animate-spin text-km0-orange' : 'text-gray-400'}`}
+            title="Refrescar datos"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
         </div>
-        <button 
-          onClick={role === 'motorizado' ? undefined : exportToCSV}
-          className="btn-primary"
-        >
-          {role === 'motorizado' ? 'Ver Mapa de Ruta' : 'Exportar Reporte'}
-        </button>
+        <div className="flex gap-2">
+          {role !== 'motorizado' && (
+            <button 
+              onClick={() => setShowTrash(!showTrash)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                showTrash 
+                  ? 'bg-km0-black text-white' 
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              <Trash2 className="w-4 h-4" />
+              {showTrash ? 'Volver a Pedidos' : 'Papelera'}
+            </button>
+          )}
+          <button 
+            onClick={role === 'motorizado' ? undefined : exportToCSV}
+            className="btn-primary"
+          >
+            {role === 'motorizado' ? 'Ver Mapa de Ruta' : 'Exportar Reporte'}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -116,24 +198,22 @@ export default function Orders() {
             className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
           />
         </div>
-        <div className="flex gap-2">
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all outline-none"
-          >
-            <option value="all">Todos los Estados</option>
-            <option value="pending">Pendientes</option>
-            <option value="in_transit">En Camino</option>
-            <option value="delivered">Entregados</option>
-            <option value="cancelled">Cancelados</option>
-            <option value="on_hold">En Pausa</option>
-          </select>
-          <button className="btn-secondary">
-            <Filter className="w-4 h-4" />
-            <span className="hidden sm:inline">Más Filtros</span>
-          </button>
-        </div>
+        {!showTrash && (
+          <div className="flex gap-2">
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all outline-none"
+            >
+              <option value="all">Todos los Estados</option>
+              <option value="pending">Pendientes</option>
+              <option value="in_transit">En Camino</option>
+              <option value="delivered">Entregados</option>
+              <option value="cancelled">Cancelados</option>
+              <option value="on_hold">En Pausa</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="card-utility overflow-hidden p-0">
@@ -144,7 +224,7 @@ export default function Orders() {
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">Tracking</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">Cliente / Dirección</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">Estado</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">Entrega Est.</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">{showTrash ? 'Eliminado el' : 'Entrega Est.'}</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">Pago</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono">Total</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 font-mono"></th>
@@ -152,19 +232,21 @@ export default function Orders() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredOrders.length > 0 ? filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50/80 transition-colors group">
+                <tr key={order.id} className={`hover:bg-gray-50/80 transition-colors group ${order.isDeleted ? 'opacity-75' : ''}`}>
                   <td className="px-6 py-4">
                     <span className="font-mono text-sm font-medium text-zinc-900">{order.trackingNumber}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-bold text-ktm-black">{order.customerName}</div>
+                    <div className="text-sm font-bold text-km0-black">{order.customerName}</div>
                     <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate max-w-[200px]">{order.deliveryAddress}</div>
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={order.status} />
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-xs font-bold text-gray-500">{order.estimatedDelivery}</div>
+                    <div className="text-xs font-bold text-gray-500">
+                      {order.isDeleted ? (order.deletedAt ? new Date(order.deletedAt).toLocaleDateString() : 'Desconocido') : order.estimatedDelivery}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <PaymentBadge status={order.paymentStatus} />
@@ -174,7 +256,7 @@ export default function Orders() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 relative">
-                      {role === 'motorizado' && order.status !== 'delivered' && (
+                      {!showTrash && role === 'motorizado' && order.status !== 'delivered' && (
                         <button 
                           onClick={() => handleDeliverClick(order)}
                           className="btn-primary px-4 py-2 text-[10px]"
@@ -183,40 +265,65 @@ export default function Orders() {
                         </button>
                       )}
                       
-                      <div className="relative">
-                        <button 
-                          onClick={() => setActiveMenuId(activeMenuId === order.id ? null : order.id)}
-                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
+                      {showTrash ? (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => restoreOrder(order.id)}
+                            className="p-2 hover:bg-green-50 text-green-500 rounded-lg transition-colors"
+                            title="Restaurar"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handlePermanentDelete(order.id)}
+                            className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                            title="Borrar Permanentemente"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <button 
+                            onClick={() => setActiveMenuId(activeMenuId === order.id ? null : order.id)}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
 
-                        <AnimatePresence>
-                          {activeMenuId === order.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
-                              <motion.div 
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 z-20 py-2 overflow-hidden text-left"
-                              >
-                                <button onClick={() => { setActiveMenuId(null); setSelectedOrder(order); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-ktm-orange transition-colors">Ver Detalles</button>
-                                <button onClick={() => { setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-ktm-orange transition-colors">Imprimir Guía</button>
-                                <button onClick={() => { setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-ktm-orange transition-colors border-t border-gray-50">Rastrear envío</button>
-                                <button onClick={() => { setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50">Cancelar Pedido</button>
-                              </motion.div>
-                            </>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                          <AnimatePresence>
+                            {activeMenuId === order.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+                                <motion.div 
+                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                  className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 z-20 py-2 overflow-hidden text-left"
+                                >
+                                  <button onClick={() => { setActiveMenuId(null); setSelectedOrder(order); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors">Ver Detalles</button>
+                                  {role === 'admin' && (
+                                    <button onClick={() => { setActiveMenuId(null); setIsAssigning(order.id); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors">Asignar Motorizado</button>
+                                  )}
+                                  <button onClick={() => handlePrint(order)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors">Imprimir Guía</button>
+                                  <button onClick={() => { setActiveMenuId(null); notify('Rastreo Activo', 'Abriendo mapa de seguimiento...', 'info'); }} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-km0-orange transition-colors border-t border-gray-50">Rastrear envío</button>
+                                  <button onClick={() => handleCancel(order.id)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50">Cancelar Pedido</button>
+                                  {role === 'admin' && (
+                                    <button onClick={() => handleDelete(order.id)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors border-t border-gray-50">Eliminar</button>
+                                  )}
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
               )) : (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-gray-400 italic font-bold uppercase tracking-widest text-xs">
-                    No hay pedidos registrados en esta sección
+                    {showTrash ? 'La papelera está vacía' : 'No hay pedidos registrados en esta sección'}
                   </td>
                 </tr>
               )}
@@ -245,7 +352,7 @@ export default function Orders() {
               <div className="p-8">
                 <div className="flex justify-between items-start mb-8">
                   <div>
-                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-ktm-black leading-none">Orden <span className="text-ktm-orange">{selectedOrder.trackingNumber}</span></h3>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-km0-black leading-none">Orden <span className="text-km0-orange">{selectedOrder.trackingNumber}</span></h3>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 px-1">Detalles completos del envío</p>
                   </div>
                   <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -261,37 +368,96 @@ export default function Orders() {
                     </div>
                     <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100">
                       <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-1">Total a Recaudar</p>
-                      <p className="text-xl font-black text-ktm-black">${selectedOrder.amount.toFixed(2)}</p>
+                      <p className="text-xl font-black text-km0-black">${selectedOrder.amount.toFixed(2)}</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-ktm-orange shrink-0">
+                      <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-km0-orange shrink-0">
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Cliente</p>
-                        <p className="font-bold text-ktm-black">{selectedOrder.customerName}</p>
+                        <p className="font-bold text-km0-black">{selectedOrder.customerName}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-ktm-orange shrink-0">
+                      <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-km0-orange shrink-0">
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Dirección</p>
-                        <p className="font-bold text-ktm-black">{selectedOrder.deliveryAddress}</p>
+                        <p className="font-bold text-km0-black">{selectedOrder.deliveryAddress}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="pt-6 border-t border-gray-50 flex gap-4">
-                    <button className="flex-1 btn-primary py-4">Imprimir Ticket</button>
-                    <button onClick={() => setSelectedOrder(null)} className="flex-1 px-8 py-4 bg-gray-100 text-ktm-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors">Cerrar</button>
+                    <button onClick={() => handlePrint(selectedOrder)} className="flex-1 btn-primary py-4">Imprimir Ticket</button>
+                    <button onClick={() => setSelectedOrder(null)} className="flex-1 px-8 py-4 bg-gray-100 text-km0-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors">Cerrar</button>
                   </div>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isAssigning && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAssigning(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-md bg-white rounded-[40px] overflow-hidden shadow-2xl relative z-[70] p-10"
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-km0-black leading-none">Asignación <span className="text-km0-orange">Express</span></h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 px-1">Selecciona un motorizado de la red</p>
+                </div>
+                <button onClick={() => setIsAssigning(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 font-sans">
+                {riders.length > 0 ? riders.map(rider => (
+                  <button
+                    key={rider.email}
+                    onClick={() => handleAssign(isAssigning, rider)}
+                    className="w-full flex items-center gap-4 p-4 rounded-3xl border border-gray-100 hover:border-km0-orange hover:bg-orange-50/50 transition-all text-left group"
+                  >
+                    <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-km0-orange group-hover:text-white transition-colors">
+                      <Bike className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="font-black italic uppercase text-km0-black text-sm">{rider.name}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{rider.email}</p>
+                    </div>
+                  </button>
+                )) : (
+                  <div className="text-center py-10">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No hay motorizados disponibles</p>
+                  </div>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setIsAssigning(null)} 
+                className="w-full mt-6 py-4 bg-gray-50 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
             </motion.div>
           </div>
         )}
@@ -303,7 +469,7 @@ export default function Orders() {
 function StatusBadge({ status }: { status: Order['status'] }) {
   const configs = {
     pending: { label: 'Pendiente', icon: Clock, color: 'bg-gray-100 text-gray-600' },
-    in_transit: { label: 'En Camino', icon: Truck, color: 'bg-orange-50 text-ktm-orange border border-orange-100' },
+    in_transit: { label: 'En Camino', icon: Truck, color: 'bg-orange-50 text-km0-orange border border-orange-100' },
     delivered: { label: 'Entregado', icon: CheckCircle2, color: 'bg-black text-white' },
     cancelled: { label: 'Cancelado', icon: AlertCircle, color: 'bg-red-50 text-red-600' },
     on_hold: { label: 'En Pausa', icon: Clock, color: 'bg-amber-50 text-amber-600' },

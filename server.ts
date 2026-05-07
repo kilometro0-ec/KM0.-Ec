@@ -23,23 +23,28 @@ async function startServer() {
   const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 
   app.post("/api/sync/orders", async (req, res) => {
+    console.log("Syncing orders...");
     try {
       const orders = req.body;
       const values = [
-        ['ID', 'Tracking', 'Cliente', 'Dirección', 'Estado', 'Monto', 'Fecha Creación', 'Pago'],
+        ['ID', 'Tracking', 'Cliente', 'Dirección', 'Estado', 'Monto', 'Fecha Creación', 'Pago', 'Motorizado'],
         ...orders.map((o: any) => [
-          o.id, o.trackingNumber, o.customerName, o.deliveryAddress, o.status, o.amount, o.createdAt, o.paymentStatus
+          o.id, o.trackingNumber, o.customerName, o.deliveryAddress, o.status, o.amount, o.createdAt, o.paymentStatus, o.riderName || 'Sin asignar'
         ])
       ];
 
-      await updateSheet(SPREADSHEET_ID!, 'Pedidos!A1', values);
+      if (!SPREADSHEET_ID) throw new Error("GOOGLE_SHEET_ID not set");
+      await updateSheet(SPREADSHEET_ID, 'Pedidos!A1', values);
+      console.log("Orders synced successfully");
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Sync Error (Orders):", error.message);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/sync/users", async (req, res) => {
+    console.log("Syncing users...");
     try {
       const users = req.body;
       const values = [
@@ -49,14 +54,18 @@ async function startServer() {
         ])
       ];
 
-      await updateSheet(SPREADSHEET_ID!, 'Usuarios!A1', values);
+      if (!SPREADSHEET_ID) throw new Error("GOOGLE_SHEET_ID not set");
+      await updateSheet(SPREADSHEET_ID, 'Usuarios!A1', values);
+      console.log("Users synced successfully");
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Sync Error (Users):", error.message);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/sync/inventory", async (req, res) => {
+    console.log("Syncing inventory...");
     try {
       const items = req.body;
       const values = [
@@ -66,14 +75,18 @@ async function startServer() {
         ])
       ];
 
-      await updateSheet(SPREADSHEET_ID!, 'Inventario!A1', values);
+      if (!SPREADSHEET_ID) throw new Error("GOOGLE_SHEET_ID not set");
+      await updateSheet(SPREADSHEET_ID, 'Inventario!A1', values);
+      console.log("Inventory synced successfully");
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Sync Error (Inventory):", error.message);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/sync/transactions", async (req, res) => {
+    console.log("Syncing transactions...");
     try {
       const txs = req.body;
       const values = [
@@ -83,14 +96,18 @@ async function startServer() {
         ])
       ];
 
-      await updateSheet(SPREADSHEET_ID!, 'Pagos!A1', values);
+      if (!SPREADSHEET_ID) throw new Error("GOOGLE_SHEET_ID not set");
+      await updateSheet(SPREADSHEET_ID, 'Pagos!A1', values);
+      console.log("Transactions synced successfully");
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Sync Error (Transactions):", error.message);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/sync/news", async (req, res) => {
+    console.log("Syncing news...");
     try {
       const news = req.body;
       const values = [
@@ -100,9 +117,12 @@ async function startServer() {
         ])
       ];
 
-      await updateSheet(SPREADSHEET_ID!, 'Novedades!A1', values);
+      if (!SPREADSHEET_ID) throw new Error("GOOGLE_SHEET_ID not set");
+      await updateSheet(SPREADSHEET_ID, 'Novedades!A1', values);
+      console.log("News synced successfully");
       res.json({ success: true });
     } catch (error: any) {
+      console.error("Sync Error (News):", error.message);
       res.status(500).json({ error: error.message });
     }
   });

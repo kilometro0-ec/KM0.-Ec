@@ -40,6 +40,11 @@ export interface Order {
   updatedAt: string;
   paymentStatus: 'paid' | 'pending' | 'overdue';
   amount: number;
+  riderId?: string;
+  riderName?: string;
+  phone?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface NewsItem {

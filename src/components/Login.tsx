@@ -58,7 +58,7 @@ export default function Login() {
       label: 'Tienda / Comercio', 
       desc: 'Sube pedidos y rasta tus envíos', 
       icon: ShoppingBag, 
-      color: 'bg-ktm-orange',
+      color: 'bg-km0-orange',
       canRegister: true 
     },
     { 
@@ -66,7 +66,7 @@ export default function Login() {
       label: 'Motorizado / Rider', 
       desc: 'Gestiona tus rutas y estados', 
       icon: Bike, 
-      color: 'bg-ktm-orange',
+      color: 'bg-km0-orange',
       canRegister: true 
     }
   ];
@@ -76,8 +76,8 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-ktm-orange opacity-[0.03] blur-[120px] -translate-y-1/2 translate-x-1/2 rounded-full" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-ktm-orange opacity-[0.02] blur-[100px] translate-y-1/2 -translate-x-1/2 rounded-full" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-km0-orange opacity-[0.03] blur-[120px] -translate-y-1/2 translate-x-1/2 rounded-full" />
+      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-km0-orange opacity-[0.02] blur-[100px] translate-y-1/2 -translate-x-1/2 rounded-full" />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -85,10 +85,10 @@ export default function Login() {
         className="w-full max-w-md space-y-8 relative z-10"
       >
         <div className="text-center">
-          <div className="w-16 h-16 bg-ktm-orange rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-500/20 rotate-3">
+          <div className="w-16 h-16 bg-km0-orange rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-500/20 rotate-3">
             <Truck className="text-white w-8 h-8 -rotate-3" />
           </div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">Kilometro <span className="text-ktm-orange">0</span></h1>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">Kilometro <span className="text-km0-orange">0</span></h1>
           <p className="text-gray-500 mt-2 text-[10px] font-bold uppercase tracking-[0.2em]">Ready to Deliver</p>
         </div>
 
@@ -96,13 +96,13 @@ export default function Login() {
           <div className="flex gap-2 p-1 bg-white/[0.03] rounded-xl">
              <button 
               onClick={() => { setMode('login'); setSelectedRole('admin'); }}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? 'bg-ktm-orange text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? 'bg-km0-orange text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
              >
                Ingresar
              </button>
              <button 
               onClick={() => { setMode('register'); setSelectedRole('tienda'); }}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${mode === 'register' ? 'bg-ktm-orange text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${mode === 'register' ? 'bg-km0-orange text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
              >
                Registrarse
              </button>
@@ -128,7 +128,7 @@ export default function Login() {
                         onClick={() => setSelectedRole(role.id as UserRole)}
                         className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${
                           selectedRole === role.id 
-                            ? 'border-ktm-orange bg-white/5' 
+                            ? 'border-km0-orange bg-white/5' 
                             : 'border-white/[0.03] hover:border-white/10 bg-transparent'
                         }`}
                       >
@@ -139,7 +139,7 @@ export default function Login() {
                           <p className="text-xs font-bold text-white leading-none">{role.label}</p>
                         </div>
                         {selectedRole === role.id && (
-                          <div className="w-1.5 h-1.5 bg-ktm-orange rounded-full shadow-[0_0_10px_#FF6600]" />
+                          <div className="w-1.5 h-1.5 bg-km0-orange rounded-full shadow-[0_0_10px_#FF6600]" />
                         )}
                       </button>
                     ))}
@@ -165,7 +165,7 @@ export default function Login() {
                       placeholder="Nombre Completo / Razón Social"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl text-sm text-white placeholder:text-gray-600 focus:border-ktm-orange outline-none transition-all"
+                      className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl text-sm text-white placeholder:text-gray-600 focus:border-km0-orange outline-none transition-all"
                      />
                    </motion.div>
                  )}
@@ -179,7 +179,7 @@ export default function Login() {
                   placeholder={mode === 'login' ? 'Correo o Usuario' : 'Correo Electrónico'}
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl text-sm text-white placeholder:text-gray-600 focus:border-ktm-orange outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl text-sm text-white placeholder:text-gray-600 focus:border-km0-orange outline-none transition-all"
                  />
                </div>
                
@@ -191,7 +191,7 @@ export default function Login() {
                   placeholder="Contraseña"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl text-sm text-white placeholder:text-gray-600 focus:border-ktm-orange outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl text-sm text-white placeholder:text-gray-600 focus:border-km0-orange outline-none transition-all"
                  />
                </div>
             </div>
@@ -211,7 +211,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-xs text-gray-500">
-          ¿Problemas con el acceso? Contacta a <span className="font-bold text-ktm-orange cursor-pointer hover:underline uppercase tracking-widest">Soporte KTM</span>
+          ¿Problemas con el acceso? Contacta a <span className="font-bold text-km0-orange cursor-pointer hover:underline uppercase tracking-widest">Soporte KM0</span>
         </p>
       </motion.div>
     </div>

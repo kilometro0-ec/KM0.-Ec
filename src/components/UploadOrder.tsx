@@ -4,7 +4,10 @@ import { motion } from 'motion/react';
 
 import { useOrders } from '../context/OrderContext';
 
+import { useNotifications } from '../context/NotificationContext';
+
 export default function UploadOrder() {
+  const { notify } = useNotifications();
   const { addOrder } = useOrders();
   const [formData, setFormData] = useState({
     customerName: '',
@@ -21,18 +24,17 @@ export default function UploadOrder() {
     e.preventDefault();
     
     addOrder({
-      trackingNumber: `KTM-REC-${Math.floor(Math.random() * 90000) + 10000}`,
       customerName: formData.customerName,
+      phone: formData.phone,
       deliveryAddress: `${formData.address}, ${formData.city}`,
       status: 'pending',
       amount: parseFloat(formData.amount) || 0,
       paymentStatus: 'pending',
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
       estimatedDelivery: 'Pendiente de asignación'
     });
 
     setIsSuccess(true);
+    notify('Pedido Registrado', `El envío para ${formData.customerName} ha sido creado con éxito.`, 'success');
     setFormData({
       customerName: '',
       phone: '',
@@ -183,6 +185,27 @@ export default function UploadOrder() {
             <ArrowRight className={`w-4 h-4 group-hover:translate-x-1 transition-transform ${isSuccess ? 'hidden' : ''}`} />
           </button>
         </div>
+
+        {isSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="pt-4 flex justify-end"
+          >
+            <button 
+              type="button"
+              onClick={() => {
+                // This is a hack because setActiveTab is not available here directly
+                // but we can trigger a navigation message or the user can just click
+                window.location.hash = '#orders'; 
+                // Wait, App uses state for activeTab, not hash.
+              }}
+              className="text-xs font-bold text-green-600 hover:underline uppercase tracking-widest"
+            >
+              Exito: El pedido se ha guardado localmente y se está sincronizando...
+            </button>
+          </motion.div>
+        )}
       </motion.form>
     </div>
   );

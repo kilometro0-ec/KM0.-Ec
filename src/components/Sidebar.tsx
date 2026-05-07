@@ -40,10 +40,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   return (
     <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">
       <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-10 h-10 bg-ktm-orange rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+        <div className="w-10 h-10 bg-km0-orange rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
           <Truck className="text-white w-6 h-6" />
         </div>
-        <span className="font-black text-xl tracking-tighter uppercase italic">Kilometro <span className="text-ktm-orange">0</span></span>
+        <span className="font-black text-xl tracking-tighter uppercase italic">Kilometro <span className="text-km0-orange">0</span></span>
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-1">
@@ -53,8 +53,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             onClick={() => setActiveTab(item.id)}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === item.id
-                ? 'bg-ktm-orange text-white shadow-lg shadow-orange-500/20'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-ktm-black'
+                ? 'bg-km0-orange text-white shadow-lg shadow-orange-500/20'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-km0-black'
             }`}
           >
             <item.icon className="w-5 h-5" />
@@ -72,7 +72,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 <button
                   key={r}
                   onClick={() => setRole(r)}
-                  className="px-2 py-1.5 text-[10px] font-bold uppercase bg-white border border-gray-200 rounded-lg hover:border-ktm-orange hover:text-ktm-orange transition-all font-mono"
+                  className="px-2 py-1.5 text-[10px] font-bold uppercase bg-white border border-gray-200 rounded-lg hover:border-km0-orange hover:text-km0-orange transition-all font-mono"
                 >
                   {r}
                 </button>
@@ -84,7 +84,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         {role !== 'admin' && (
            <button 
             onClick={() => setRole('admin')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-ktm-orange bg-orange-50 hover:bg-orange-100 transition-all mb-2"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-km0-orange bg-orange-50 hover:bg-orange-100 transition-all mb-2"
           >
             <Shield className="w-4 h-4" />
             Volver a Admin
@@ -94,7 +94,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         <button 
           onClick={() => setActiveTab('settings')}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            activeTab === 'settings' ? 'bg-ktm-orange text-white shadow-lg shadow-orange-500/20' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+            activeTab === 'settings' ? 'bg-km0-orange text-white shadow-lg shadow-orange-500/20' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
           <Settings className="w-5 h-5" />

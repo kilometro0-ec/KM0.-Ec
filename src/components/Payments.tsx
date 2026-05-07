@@ -9,7 +9,7 @@ export default function Payments() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('ktm_payments');
+    const saved = localStorage.getItem('km0_payments');
     if (saved) return JSON.parse(saved);
     return [
       { id: 1, type: 'income', customer: 'Juan Pérez', amount: 15.50, date: '24 Mar, 2024', status: 'completed' },
@@ -20,17 +20,22 @@ export default function Payments() {
   });
 
   useEffect(() => {
-    localStorage.setItem('ktm_payments', JSON.stringify(transactions));
+    localStorage.setItem('km0_payments', JSON.stringify(transactions));
 
     const syncWithSheets = async () => {
       try {
-        await fetch('/api/sync/transactions', {
+        const response = await fetch('/api/sync/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(transactions)
         });
-      } catch (err) {
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Server error during sync');
+        }
+      } catch (err: any) {
         console.error('Failed to sync payments with sheets:', err);
+        notify('Error de Sincronización', `No se pudo enviar las transacciones a Google Sheets: ${err.message}`, 'alert' as any);
       }
     };
     
@@ -38,12 +43,27 @@ export default function Payments() {
     return () => clearTimeout(timeoutId);
   }, [transactions]);
 
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+
   const handleRequestSettlement = () => {
+    if (isProcessing) return;
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
       setSuccess(true);
       notify('Liquidación Solicitada', 'Tu solicitud está siendo procesada por tesorería.', 'success');
+      
+      const newTx = {
+        id: Date.now(),
+        type: 'payout',
+        customer: 'Liquidación KM0-FND',
+        amount: 1240.50,
+        date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+        status: 'pending'
+      };
+      setTransactions([newTx, ...transactions]);
+
       setTimeout(() => {
         setSuccess(false);
         setShowSettlement(false);
@@ -53,9 +73,9 @@ export default function Payments() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-end border-b-2 border-ktm-orange pb-6">
+      <div className="flex justify-between items-end border-b-2 border-km0-orange pb-6">
         <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-ktm-black">Finanzas & <span className="text-ktm-orange">Pagos</span></h1>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-km0-black">Finanzas & <span className="text-km0-orange">Pagos</span></h1>
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 px-1">Control de tesorería y saldos de red</p>
         </div>
         <button 
@@ -68,7 +88,7 @@ export default function Payments() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card-utility bg-ktm-black text-white border-zinc-900 border-b-4 border-b-ktm-orange">
+        <div className="card-utility bg-km0-black text-white border-zinc-900 border-b-4 border-b-km0-orange">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-white/10 rounded-2xl">
               <Wallet className="w-6 h-6 text-white" />
@@ -105,7 +125,12 @@ export default function Payments() {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-bold text-xl">Transacciones Recientes</h3>
-          <button className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors">Ver historial completo</button>
+          <button 
+            onClick={() => setShowHistory(true)}
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+          >
+            Ver historial completo
+          </button>
         </div>
 
         <div className="card-utility p-0 overflow-hidden">
@@ -113,6 +138,7 @@ export default function Payments() {
             {transactions.map((tx, i) => (
               <motion.div 
                 key={tx.id}
+                onClick={() => setSelectedTx(tx)}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
@@ -165,16 +191,16 @@ export default function Payments() {
               className="w-full max-w-md bg-white rounded-[40px] overflow-hidden shadow-2xl relative z-50"
             >
               <div className="p-8 text-center">
-                <div className="w-20 h-20 bg-orange-50 rounded-[30px] flex items-center justify-center text-ktm-orange mx-auto mb-6 shadow-xl shadow-orange-500/10">
+                <div className="w-20 h-20 bg-orange-50 rounded-[30px] flex items-center justify-center text-km0-orange mx-auto mb-6 shadow-xl shadow-orange-500/10">
                    <Wallet className="w-10 h-10" />
                 </div>
                 
-                <h3 className="text-3xl font-black italic uppercase tracking-tighter text-ktm-black leading-none">Solicitud de <span className="text-ktm-orange">Liquidación</span></h3>
+                <h3 className="text-3xl font-black italic uppercase tracking-tighter text-km0-black leading-none">Solicitud de <span className="text-km0-orange">Liquidación</span></h3>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-3 px-6">¿Deseas transferir el saldo disponible a tu cuenta bancaria registrada?</p>
 
                 <div className="my-8 p-6 bg-gray-50 rounded-3xl border border-gray-100">
                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Monto a Liquidar</p>
-                  <p className="text-4xl font-black italic text-ktm-black uppercase tracking-tighter">$1,240.50</p>
+                  <p className="text-4xl font-black italic text-km0-black uppercase tracking-tighter">$1,240.50</p>
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -199,6 +225,71 @@ export default function Payments() {
                     Cancelar
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {(showHistory || selectedTx) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setShowHistory(false); setSelectedTx(null); }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-2xl bg-white rounded-[40px] overflow-hidden shadow-2xl relative z-50"
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-km0-black leading-none">
+                      {selectedTx ? 'Detalle de <span className="text-km0-orange">Transacción</span>' : 'Historial <span className="text-km0-orange">Completo</span>'}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2 px-1">Registros contables auditados</p>
+                  </div>
+                  <button onClick={() => { setShowHistory(false); setSelectedTx(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <X className="w-6 h-6 text-gray-400" />
+                  </button>
+                </div>
+
+                <div className="max-h-[500px] overflow-y-auto space-y-4 pr-2">
+                  {(selectedTx ? [selectedTx] : transactions).map((tx) => (
+                    <div key={tx.id} className="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl ${tx.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                           {tx.type === 'income' ? <ArrowDownLeft className="w-6 h-6" /> : <ArrowUpRight className="w-6 h-6" />}
+                        </div>
+                        <div>
+                          <p className="font-black italic uppercase text-km0-black">{tx.customer}</p>
+                          <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">{tx.date} • ID: {tx.id}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xl font-black italic tracking-tighter ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)}
+                        </p>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${tx.status === 'completed' ? 'bg-black text-white' : 'bg-orange-500 text-white'}`}>
+                          {tx.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button 
+                  onClick={() => { setShowHistory(false); setSelectedTx(null); }}
+                  className="w-full mt-8 py-4 bg-gray-100 text-km0-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-colors"
+                >
+                  Cerrar Vista
+                </button>
               </div>
             </motion.div>
           </div>

@@ -1,5 +1,6 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { X } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -9,6 +10,11 @@ interface DashboardProps {
 
 export default function Dashboard({ setActiveTab }: DashboardProps) {
   const { role } = useAuth();
+  const [news, setNews] = useState([
+    { id: 1, title: 'Retraso en Ruta Norte', time: '10 min ago', type: 'warning' },
+    { id: 2, title: 'Nueva zona de entrega activa', time: '1h ago', type: 'info' },
+    { id: 3, title: 'Actualización de Tarifas', time: '3h ago', type: 'alert' },
+  ]);
 
   const statsByRole = {
     admin: [
@@ -33,22 +39,21 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
 
   const stats = statsByRole[role];
 
-  const recentNews = [
-    { id: 1, title: 'Retraso en Ruta Norte', time: '10 min ago', type: 'warning' },
-    { id: 2, title: 'Nueva zona de entrega activa', time: '1h ago', type: 'info' },
-    { id: 3, title: 'Actualización de Tarifas', time: '3h ago', type: 'alert' },
-  ];
+  const handleDismissNews = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setNews(prev => prev.filter(n => n.id !== id));
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-ktm-black">Dashboard <span className="text-ktm-orange underline decoration-[4px] underline-offset-8">Operativo</span></h1>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-km0-black">Dashboard <span className="text-km0-orange underline decoration-[4px] underline-offset-8">Operativo</span></h1>
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2 px-1">Kilometro 0 Force Management</p>
         </div>
         <div className="text-[10px] text-gray-400 font-bold bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center gap-2">
-          <div className="w-2 h-2 bg-ktm-orange rounded-full anim-pulse" />
-          SYSTEM STATUS: <span className="text-ktm-black font-black uppercase tracking-widest">Active</span> • {new Date().toLocaleTimeString()}
+          <div className="w-2 h-2 bg-km0-orange rounded-full anim-pulse" />
+          SYSTEM STATUS: <span className="text-km0-black font-black uppercase tracking-widest">Active</span> • {new Date().toLocaleTimeString()}
         </div>
       </div>
 
@@ -59,13 +64,13 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.1 }}
             key={stat.label}
-            className="card-utility hover:border-ktm-orange hover:shadow-xl hover:shadow-orange-500/5 transition-all group cursor-default border-l-4 border-l-ktm-orange"
+            className="card-utility hover:border-km0-orange hover:shadow-xl hover:shadow-orange-500/5 transition-all group cursor-default border-l-4 border-l-km0-orange"
           >
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
             <div className="mt-2 flex items-baseline justify-between">
-              <h2 className="text-3xl font-black tracking-tighter text-ktm-black italic">{stat.value}</h2>
+              <h2 className="text-3xl font-black tracking-tighter text-km0-black italic">{stat.value}</h2>
               <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider ${
-                stat.trend.startsWith('+') ? 'bg-orange-50 text-ktm-orange' : 
+                stat.trend.startsWith('+') ? 'bg-orange-50 text-km0-orange' : 
                 stat.trend.includes('%') ? 'bg-black text-white' : 'bg-gray-100 text-gray-500'
               }`}>
                 {stat.trend}
@@ -79,28 +84,28 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
         <div className="lg:col-span-2 card-utility h-[400px] flex flex-col group">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h3 className="font-black italic uppercase tracking-tighter text-xl text-ktm-black">Monitor de Mapa <span className="text-ktm-orange italic">Live</span></h3>
+              <h3 className="font-black italic uppercase tracking-tighter text-xl text-km0-black">Monitor de Mapa <span className="text-km0-orange italic">Live</span></h3>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Coordenadas de despacho en tiempo real</p>
             </div>
             <div className="flex gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-ktm-orange rounded-full text-[10px] font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-km0-orange rounded-full text-[10px] font-black text-white uppercase tracking-widest shadow-lg shadow-orange-500/20">
                 <div className="w-1.5 h-1.5 bg-white rounded-full anim-pulse" />
                 12 Riders Activos
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-[#111] rounded-2xl flex items-center justify-center border-2 border-white/5 group-hover:border-ktm-orange/20 transition-all bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] relative overflow-hidden">
+          <div className="flex-1 bg-[#111] rounded-2xl flex items-center justify-center border-2 border-white/5 group-hover:border-km0-orange/20 transition-all bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:16px_16px] relative overflow-hidden">
             <div className="relative z-10 text-center">
-              <div className="w-16 h-16 bg-ktm-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-ktm-orange/20">
-                <div className="w-4 h-4 bg-ktm-orange rounded-full animate-ping" />
+              <div className="w-16 h-16 bg-km0-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-km0-orange/20">
+                <div className="w-4 h-4 bg-km0-orange rounded-full animate-ping" />
               </div>
               <p className="text-white text-xs font-bold uppercase tracking-[0.2em]">Escaneando Zonas de Entrega...</p>
               <p className="text-[9px] text-white/30 uppercase tracking-[0.3em] mt-1 font-mono">Telemetry stream v4.28</p>
             </div>
             <div className="absolute inset-0 opacity-10 pointer-events-none">
-                <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-ktm-orange rounded-full shadow-[0_0_10px_#FF6600]" />
-                <div className="absolute top-2/3 left-1/2 w-1.5 h-1.5 bg-ktm-orange rounded-full shadow-[0_0_10px_#FF6600]" />
-                <div className="absolute top-1/2 left-3/4 w-2 h-2 bg-ktm-orange rounded-full shadow-[0_0_10px_#FF6600]" />
+                <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-km0-orange rounded-full shadow-[0_0_10px_#FF6600]" />
+                <div className="absolute top-2/3 left-1/2 w-1.5 h-1.5 bg-km0-orange rounded-full shadow-[0_0_10px_#FF6600]" />
+                <div className="absolute top-1/2 left-3/4 w-2 h-2 bg-km0-orange rounded-full shadow-[0_0_10px_#FF6600]" />
             </div>
           </div>
         </div>
@@ -111,21 +116,38 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
             <span className="text-[10px] font-bold bg-zinc-100 text-zinc-500 px-2 py-1 rounded-md">LIVE</span>
           </div>
           <div className="space-y-4">
-            {recentNews.map((news) => (
-              <div 
-                key={news.id} 
-                onClick={() => setActiveTab('news')}
-                className="flex gap-4 p-4 rounded-2xl hover:bg-zinc-50 transition-all cursor-pointer border border-transparent hover:border-gray-100 active:scale-[0.98]"
-              >
-                <div className={`w-1 h-8 rounded-full mt-1 ${
-                  news.type === 'warning' ? 'bg-ktm-orange' : news.type === 'alert' ? 'bg-ktm-black' : 'bg-gray-300'
-                }`} />
-                <div>
-                  <p className="text-sm font-bold text-zinc-900">{news.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{news.time}</p>
-                </div>
+            <AnimatePresence mode="popLayout">
+              {news.map((item) => (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  key={item.id} 
+                  onClick={() => setActiveTab('news')}
+                  className="flex gap-4 p-4 rounded-2xl hover:bg-zinc-50 transition-all cursor-pointer border border-transparent hover:border-gray-100 active:scale-[0.98] relative group"
+                >
+                  <button 
+                    onClick={(e) => handleDismissNews(e, item.id)}
+                    className="absolute right-2 top-2 p-1 hover:bg-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3 text-gray-400" />
+                  </button>
+                  <div className={`w-1 h-8 rounded-full mt-1 ${
+                    item.type === 'warning' ? 'bg-km0-orange' : item.type === 'alert' ? 'bg-km0-black' : 'bg-gray-300'
+                  }`} />
+                  <div>
+                    <p className="text-sm font-bold text-zinc-900">{item.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {news.length === 0 && (
+              <div className="py-8 text-center bg-gray-50 rounded-2xl">
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4 leading-relaxed">No hay novedades pendientes por leer</p>
               </div>
-            ))}
+            )}
           </div>
           <button 
             onClick={() => setActiveTab('news')}
