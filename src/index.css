@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-ktm-orange: #FF6600;
+  --color-ktm-black: #000000;
+  
+  --color-brand-primary: #000000;
+  --color-brand-secondary: #1a1a1a;
+  --color-brand-accent: #FF6600;
+  --color-bg-subtle: #f5f5f5;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-[#FBFBFB] text-gray-900 antialiased;
+  }
+}
+
+.card-utility {
+  @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+}
+
+.btn-primary {
+  @apply bg-ktm-orange text-white px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-sm hover:bg-black transition-all duration-300 inline-flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-orange-500/20 active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-white text-ktm-black border-2 border-ktm-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-sm hover:bg-ktm-black hover:text-white transition-all duration-300 inline-flex items-center justify-center gap-2 cursor-pointer active:scale-95;
+}
+
+.anim-pulse {
+  animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-orange {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .7; transform: scale(1.05); }
+}
